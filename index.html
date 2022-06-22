@@ -377,11 +377,13 @@ function renderMain(){
       function modChoice(){
         document.getElementById("main_title").innerHTML = "Choose module";
         document.getElementById("mod_menu").classList.add("d-none");
+
+        document.getElementById("formulas").classList.add("d-none");
         document.getElementById('pagination').innerHTML="";
         main=document.getElementById('main');
         main.innerHTML="";
         list=`
-          <nav class="navbar navbar-expand-lg justify-content-center">
+          <nav class="navbar navbar-expand-sm justify-content-center">
             <ul class="navbar-nav">`;
 
         for (let app in STATE["apps"]) {
@@ -389,7 +391,7 @@ function renderMain(){
             // let extraA = i == 1 ? 'id="but1"' : "";
             let appName=STATE["apps"][app];
             list+=`
-            <li class="nav-item border border-primary m-2 p-3">
+            <li class="nav-item border border-primary m-2 p-2">
               <a class="nav-link"  href="${app}">${appName}</a>
             </li>
             `;
@@ -497,11 +499,11 @@ function renderMain(){
 
 <body>
 
-  <nav class="navbar  navbar-dark bg-primary">
+  <nav class="navbar  pl-3 navbar-dark bg-primary">
     <!-- Just an image -->
 
-    <a class="navbar-brand ml-2" href="" id="sigma">
-      $\Sigma$
+    <a class="navbar-brand " href="" id="sigma">
+      <span class="invisible">m</span>$ \Sigma$
     </a>
     <a type="button" class="btn btn-outline-secondary d-none" id="formulas" href="" target="_blank">
                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-pdf" viewBox="0 0 16 16">
