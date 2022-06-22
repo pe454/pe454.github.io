@@ -383,6 +383,7 @@ function renderMain(){
         main=document.getElementById('main');
         main.innerHTML="";
         list=`
+        <container>
           <nav class="navbar navbar-expand-sm justify-content-center">
             <ul class="navbar-nav">`;
 
@@ -396,7 +397,7 @@ function renderMain(){
             </li>
             `;
           };
-          list+='</ul></nav>';
+          list+='</ul></nav></container>';
           main.innerHTML=list
 
       }
