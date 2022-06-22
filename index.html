@@ -17,16 +17,24 @@
 
   <script type="text/javascript">
 
-    var dta=null;
-    dta = fetchMsgpack("/static/content.dta");
+    var STATE ={
+      app_dta : {},
+      apps :{
+        'factor': 'Factoring',
+        'diff': 'Differentiate'
+      }
+    }
 
-   function checkDtaReady(){   // if NOT ready, wait 1/2 s
-     if (dta==null){
-         setTimeout(checkDtaReady,500)
-     }else {
-          renderQuestion(1);
-     }
-   }
+    var dta = STATE.app_dta;
+
+
+    function checkMathjaxReady() { // if NOT ready, wait 1/2 s
+      if (dta == null) {
+        setTimeout(checkMathjaxReady, 500)
+      } else {
+        renderQuestion(1);
+      }
+    }
     window.MathJax = {
       tex: {
         inlineMath: [
@@ -40,8 +48,7 @@
       startup: {
         ready: () => {
           MathJax.startup.defaultReady();
-           MathJax.startup.promise.then(() => { });
-           checkDtaReady();
+          MathJax.startup.promise.then(() => {});
         }
       }
     };
@@ -57,54 +64,55 @@
 
     function getSections() {
 
-      let chap=dta["chap"];
-      let contents=dta["contents"];
+      let chap = dta["chap"];
+      let contents = dta["contents"];
 
       let sectns = [];
       for (let key in contents) {
 
         if (key.includes('_')) {
-          if (key.split('_')[0]==chap){
-            sectns.push([key,contents[key]])
-        }}
+          if (key.split('_')[0] == chap) {
+            sectns.push([key, contents[key]])
+          }
+        }
       };
       return sectns;
     }
 
     function updProbSelection() {
 
-      let chap=dta["chap"]
-      let secs=dta["secs"]
-      let levs=dta["levs"]
+      let chap = dta["chap"]
+      let secs = dta["secs"]
+      let levs = dta["levs"]
 
       let Probs = [];
-      let levSet=new Set()
-      let secSet=new Set()
+      let levSet = new Set()
+      let secSet = new Set()
 
-      for (sec of secs){
-          if (dta[sec].length>0){
-             dta[sec].forEach(item=>secSet.add(item));
-           }
+      for (sec of secs) {
+        if (dta[sec].length > 0) {
+          dta[sec].forEach(item => secSet.add(item));
         }
-        for (lev of levs){
-            if (dta[chap+"_"+lev].length>0){
-               dta[chap+"_"+lev].forEach(item=>levSet.add(item));
-             }
-          }
-      let probNrs=intersection(levSet,secSet)
+      }
+      for (lev of levs) {
+        if (dta[chap + "_" + lev].length > 0) {
+          dta[chap + "_" + lev].forEach(item => levSet.add(item));
+        }
+      }
+      let probNrs = intersection(levSet, secSet)
 
-      for (nr of probNrs){
+      for (nr of probNrs) {
         Probs.push(...dta[nr])
       }
-      selection=[];
-      i=0;
-      while( i<10 ) {
-      var index = Math.floor( Math.random()*Probs.length );
-      selection.push(Probs[index]);
-      Probs.splice( index, 1 );
-      i+=1;
-  }
-      dta["probs"]=selection
+      selection = [];
+      i = 0;
+      while (i < 10) {
+        var index = Math.floor(Math.random() * Probs.length);
+        selection.push(Probs[index]);
+        Probs.splice(index, 1);
+        i += 1;
+      }
+      dta["probs"] = selection
     };
 
     function renderQuestion(id) {
@@ -114,227 +122,308 @@
       // RENDERING
       let q_node = document.getElementById("question");
       let s_node = document.getElementById("solution");
-      q_node.innerHTML=qRAW[0];
+      q_node.innerHTML = qRAW[0];
       s_node.innerHTML = qRAW[1];
       MathJax.typeset([q_node, s_node]);
     };
 
-   function renderNavbar(){
-     let chapters=dta["chapters"]
+function renderMain(){
+  main=document.getElementById('main').innerHTML=`
+  <nav class="navbar navbar-light bg-light font-weight-bold px-2" id="opgave">
+          OPGAVE
+          <button class="navbar-toggler btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#settings">
+            <span class="navbar-toggler-icon" style="font-size:10px;"></span>
+          </button>
+        </nav>
 
-     var el = document.getElementById('main_navbar');
-     for (var i = 0; i < chapters.length; i++) {
-       var node = document.createElement("li");
-       node.classList.add("nav-item", "active");
+        <div class="collapse show" id="settings">
 
-       var link = document.createElement("a");
-       link.classList.add("nav-link");
-       link.setAttribute('href', chapters[i][0]);
-       link.innerHTML = chapters[i][0] + " " + chapters[i][1];
-       node.appendChild(link);
-       el.appendChild(node);
-     };
-   }
+          <form action="javascript:void(0);" method="post" class="inline-form" id="pb">
+            <div class="container ">
+              <div class="row justify-content-around text-white bg-primary m-3 p-2">
+                <div class="m-2 text-uppercase text-decoration-underline" id="sections">onderdeel</div>
+                <div class="m-2 text-uppercase text-decoration-underline" id="level">level</div>
+              </div>
+            </div>
 
-   function renderPagination(){
+            <div class="justify-content-center">
+              <button type="submit" class="btn btn-primary m-3" id="updatebtn">Update</button>
+            </div>
+          </form>
+        </div>
 
-     var el = document.getElementById('pagination');
-     for (var i = 1; i < 11; i++) {
-       var node = document.createElement("li");
-       var link = document.createElement("a");
+        <div id="question">
+        </div>
+        <hr />
+        <div class="dropdown">
+          <button class="btn btn-primary " type="button" data-bs-toggle="collapse" data-bs-target="#solution">Oplossing </button>
+          <div class="collapse" id="solution">
+          </div>
+        </div>
+      </div>
+`;
+}
+    function renderNavbar() {
+      let chapters = dta["chapters"]
 
-       node.classList.add("page-item");
-       if (i == 1) {
-         node.classList.add("active");
-         link.setAttribute("id","but1");
-       }
-       link.classList.add("page-link");
-       link.setAttribute('href', '?page=' + i);
-       link.innerHTML = i;
-       node.appendChild(link);
-       el.appendChild(node);
-     };
-   }
+      var el = document.getElementById('main_navbar');
+      el.innerHTML='';
+      for (var i = 0; i < chapters.length; i++) {
+        var node = document.createElement("li");
+        node.classList.add("nav-item", "active");
 
-   function renderSections() {
+        var link = document.createElement("a");
+        link.classList.add("nav-link");
+        link.setAttribute('href', chapters[i][0]);
+        link.innerHTML = chapters[i][0] + " " + chapters[i][1];
+        node.appendChild(link);
+        el.appendChild(node);
+      };
+    }
 
-     sections=getSections()
-     var el = document.getElementById('sections');
-     el.innerHTML="";
+    function renderPagination() {
 
-     for (var i = 0; i < sections.length; i++) {
-
-       var div = document.createElement("div");
-       div.classList.add("form-check");
-
-       var input = document.createElement("input");
-       input.classList.add("form-check-input", "mx-2");
-       input.setAttribute("type", "checkbox");
-       input.setAttribute("name", "secs");
-       input.setAttribute("value", sections[i][0]);
-       input.setAttribute("id", sections[i][0])
-       if (i == 0) {
-         input.setAttribute("checked", "")
-       }
-       div.appendChild(input);
-       var label = document.createElement("label");
-       label.classList.add("form-check-label", "mx-1");
-       label.setAttribute("for", sections[i][0]);
-       label.innerHTML = sections[i][1];
-       div.appendChild(label);
-       el.appendChild(div);
-     }
-   };
-
-   function renderLevels(){
-
-     levels=["l1","l2","l3"]
-     var el = document.getElementById('level');
-
-     for (var i = 1; i < levels.length+1; i++) {
-
-       var div = document.createElement("div");
-       div.classList.add("form-check");
-
-       var input = document.createElement("input");
-       input.classList.add("form-check-input", "mx-2");
-       input.setAttribute("type", "checkbox");
-       input.setAttribute("name", "levs");
-       input.setAttribute("value", levels[i-1]);
-       input.setAttribute("id", levels[i-1])
-       if (i == 1) {
-         input.setAttribute("checked", "")
-       }
-
-       div.appendChild(input);
-
-       var label = document.createElement("label");
-       label.classList.add("form-check-label", "mx-1");
-       label.setAttribute("for", levels[i-1]);
-       label.innerHTML = "level " + i;
-       div.appendChild(label);
-       el.appendChild(div);
-     }
-   };
-
-   function handleNavbar(){
-
-           var navs = document.querySelectorAll(".nav-link");
-           for (nav of navs) {
-
-             nav.addEventListener('click', function(ev) {
-               ev.preventDefault();
-               let chap = ev.target.getAttribute('href');
-
-               dta["chap"]=chap
-               let sections=getSections();
-               dta["secs"]=[sections[0][0]];
-
-               updProbSelection();
-
-               // RENDER updated probs
-
-               renderSections();
-               but1=document.getElementById("but1")
-               var clickEvent = new Event( 'click' );
-               but1.dispatchEvent( clickEvent );
-               renderQuestion(1);
-               document.getElementById("settings").classList.remove("show");
-               document.getElementById("collapsibleNavbar").classList.remove("show");
-
-             });
-           }
+      var el = document.getElementById('pagination');
+      nodes=''
+      for (var i = 1; i < 11; i++) {
+          let extraLi = i == 1 ? "active" : "";
+          let extraA = i == 1 ? 'id="but1"' : "";
+          nodes+=`
+          <li class="page-item ${extraLi}">
+            <a class="page-link" ${extraA} href="?page=${i}">${i}</a>
+          </li>
+          `;
         };
 
-    function handlePagination(){
-
-            var pagBttns = document.querySelectorAll(".page-item");
-            for (but of pagBttns) {
-
-              but.addEventListener('click', function(ev) {
-                ev.preventDefault();
-                document.getElementById("solution").classList.remove("show");
-
-                but = ev.target;
-                var pagButtns = document.querySelectorAll(".page-item");
-                for (pagButt of pagButtns) {
-                  pagButt.classList.remove('active');
-                };
-                but.parentElement.classList.add('active');
-                var page = but.getAttribute('href').match(/\d+/);
-
-                if (page == null) {
-                  page = 1
-                };
-                renderQuestion(page);
-              }, false)
-            };
+        el.innerHTML=nodes
     }
-    function handleFormUpdate(){
-      document.querySelector("#updatebtn").addEventListener('click', function (ev){
 
+    function renderSections() {
+
+      sections = getSections()
+      var el = document.getElementById('sections');
+      el.innerHTML = "";
+
+      for (var i = 0; i < sections.length; i++) {
+
+        var div = document.createElement("div");
+        div.classList.add("form-check");
+
+        var input = document.createElement("input");
+        input.classList.add("form-check-input", "mx-2");
+        input.setAttribute("type", "checkbox");
+        input.setAttribute("name", "secs");
+        input.setAttribute("value", sections[i][0]);
+        input.setAttribute("id", sections[i][0])
+        if (i == 0) {
+          input.setAttribute("checked", "")
+        }
+        div.appendChild(input);
+        var label = document.createElement("label");
+        label.classList.add("form-check-label", "mx-1");
+        label.setAttribute("for", sections[i][0]);
+        label.innerHTML = sections[i][1];
+        div.appendChild(label);
+        el.appendChild(div);
+      }
+    };
+
+    function renderLevels() {
+
+      levels = ["l1", "l2", "l3"]
+      var el = document.getElementById('level');
+
+      for (var i = 1; i < levels.length + 1; i++) {
+
+        var div = document.createElement("div");
+        div.classList.add("form-check");
+
+        var input = document.createElement("input");
+        input.classList.add("form-check-input", "mx-2");
+        input.setAttribute("type", "checkbox");
+        input.setAttribute("name", "levs");
+        input.setAttribute("value", levels[i - 1]);
+        input.setAttribute("id", levels[i - 1])
+        if (i == 1) {
+          input.setAttribute("checked", "")
+        }
+
+        div.appendChild(input);
+
+        var label = document.createElement("label");
+        label.classList.add("form-check-label", "mx-1");
+        label.setAttribute("for", levels[i - 1]);
+        label.innerHTML = "level " + i;
+        div.appendChild(label);
+        el.appendChild(div);
+      }
+    };
+
+    function handleSigma() {
+      let el=document.getElementById('sigma');
+      el.addEventListener('click', function(ev) {
         ev.preventDefault();
+        modChoice(ev);
+        handleModChoice();
+      })
+    };
 
-        // get FORM data
-        const form = document.querySelector("form");  //ev.target
-        const FD = new FormData( form );
+    function handleMultiple(selector, perItem) {
 
-        dta["secs"]=FD.getAll("secs")
-        dta["levs"]=FD.getAll("levs")
+      var items = document.querySelectorAll(selector);
+      for (item of items) {
 
-        // update DATA
+        item.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          perItem(ev);
+        });
+      }
+    };
+
+    function handleModChoice() {
+      handleMultiple(".nav-link", ev => {
+        mod=ev.target.getAttribute('href');
+        dta = fetchMsgpack("/static/"+mod+".dta");
+
+
+      });
+    }
+    function handleNavbar() {
+      handleMultiple(".nav-link", ev => {
+
+    let chap = ev.target.getAttribute('href');
+
+        dta["chap"] = chap
+        let sections = getSections();
+        dta["secs"] = [sections[0][0]];
+
         updProbSelection();
 
         // RENDER updated probs
-        document.getElementById("settings").classList.remove("show");
-        but1=document.getElementById("but1")
-        var clickEvent = new Event( 'click' );
-        but1.dispatchEvent( clickEvent );
+
+        renderSections();
+        let but1 = document.getElementById("but1")
+        var clickEvent = new Event('click');
+        but1.dispatchEvent(clickEvent);
         renderQuestion(1);
-      },false);
-    };
+        document.getElementById("settings").classList.remove("show");
+        document.getElementById("collapsibleNavbar").classList.remove("show");
 
-    window.onload = function() {
-
+      })
     }
 
-    function fetchMsgpack(url, method = "GET") {
+    function handlePagination() {
+      handleMultiple(".page-link", ev => {
+          document.getElementById("solution").classList.remove("show");
+          document.querySelectorAll(".page-item").forEach(item => item.classList.remove('active'));
 
-      fetch(url, {
-        method: '' + method,
-        credentials: "same-origin",
-      }).then(function(response) {
-        return response.arrayBuffer();
-      }).then(function(buff) {
+          ev.target.parentElement.classList.add('active');
+          var page = ev.target.getAttribute('href').match(/\d+/);
 
-        // DATA
-        uint8buff = new Uint8Array(buff);
-        dta = msgpack.decode(uint8buff);
+          if (page == null) {
+            page = 1
+          };
+          renderQuestion(page);
+        });
+      };
 
-        sections=getSections()
-        dta["secs"]=[sections[0][0]]
-        dta["levs"]=["l1"]
-        updProbSelection();
+      function handleFormUpdate() {
+        document.querySelector("#updatebtn").addEventListener('click', function(ev) {
 
-        // RENDER data
+          ev.preventDefault();
+
+          // get FORM data
+          const form = document.querySelector("form"); //ev.target
+          const FD = new FormData(form);
+
+          dta["secs"] = FD.getAll("secs")
+          dta["levs"] = FD.getAll("levs")
+
+          // update DATA
+          updProbSelection();
+
+          // RENDER updated probs
+          document.getElementById("settings").classList.remove("show");
+          but1 = document.getElementById("but1")
+          var clickEvent = new Event('click');
+          but1.dispatchEvent(clickEvent);
+          renderQuestion(1);
+        }, false);
+      };
+
+      window.onload = function() {
+          handleSigma();
+            modChoice();
+            handleModChoice();
+            document.getElementById("spinner").remove();
+            document.getElementById("chief").classList.add("show");
+
+      }
+
+      function modChoice(){
+        document.getElementById("main_title").innerHTML = "Choose module";
+        document.getElementById("mod_menu").classList.add("d-none");
+        document.getElementById('pagination').innerHTML="";
+        main=document.getElementById('main');
+        main.innerHTML="";
+        list=`
+          <nav class="navbar navbar-expand-lg justify-content-center">
+            <ul class="navbar-nav">`;
+
+        for (let app in STATE["apps"]) {
+            // let extraLi = i == 1 ? "active" : "";
+            // let extraA = i == 1 ? 'id="but1"' : "";
+            let appName=STATE["apps"][app];
+            list+=`
+            <li class="nav-item border border-primary m-2 p-3">
+              <a class="nav-link"  href="${app}">${appName}</a>
+            </li>
+            `;
+          };
+          list+='</ul></nav>';
+          main.innerHTML=list
+
+      }
+
+
+      function fetchMsgpack(url) {
+
+        fetch(url, {
+          method: 'GET',
+          credentials: "same-origin",
+        }).then(function(response) {
+          return response.arrayBuffer();
+        }).then(function(buff) {
+
+          // DATA
+          uint8buff = new Uint8Array(buff);
+          dta = msgpack.decode(uint8buff);
+
+          sections = getSections()
+          dta["secs"] = [sections[0][0]]
+          dta["levs"] = ["l1"]
+          updProbSelection();
+
+          // RENDER data
 
           document.getElementById("main_title").innerHTML = dta["title"];
+          document.getElementById("mod_menu").classList.remove("d-none")
+
+          renderMain();
           renderNavbar();
           renderPagination(10);
           renderSections();
           renderLevels();
+          renderQuestion(1);
+
           document.getElementById("settings").classList.remove("show");
 
           handleNavbar();
           handleFormUpdate()
           handlePagination();
 
-          document.getElementById("spinner").remove();
-          document.getElementById("chief").classList.add("show");
-
-      });
-    }
-
+        });
+      }
   </script>
   <style>
     .item-a {
@@ -393,7 +482,12 @@
 <body>
 
   <nav class="navbar  navbar-dark bg-primary">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+    <!-- Just an image -->
+
+    <a class="navbar-brand" href="" id="sigma">
+      $\Sigma$
+    </a>
+    <button class="navbar-toggler d-none" id="mod_menu" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
       <span class="navbar-toggler-icon"> </span>
     </button>
     <div class="collapse navbar-collapse" id="collapsibleNavbar">
@@ -402,8 +496,8 @@
     </div>
   </nav>
 
-  <div class="d-flex justify-content-center collapse show" id="spinner" >
-      <strong>Loading...</strong>
+  <div class="d-flex justify-content-center collapse show" id="spinner">
+    <strong>Loading...</strong>
     <div class="spinner-border my-5" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
@@ -412,7 +506,7 @@
 
     <div class="item item-a">
       <!-- main title -->
-      <h1 id="main_title"> </h1>
+      <h1 id="main_title">Mathsys Modules </h1>
       <ul class="pagination pagination-sm justify-content-center" id="pagination">
       </ul>
     </div> <!-- main title -->
@@ -422,42 +516,9 @@
 
     </div> <!-- left TOOLBAR -->
 
-    <div class="item item-c">
+    <div class="item item-c" id="main">
       <!-- MAIN section -->
 
-      <nav class="navbar navbar-light bg-light font-weight-bold px-2" id="opgave">
-        OPGAVE
-        <button class="navbar-toggler btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#settings">
-          <span class="navbar-toggler-icon" style="font-size:10px;"></span>
-        </button>
-      </nav>
-
-        <div class="collapse show" id="settings">
-
-          <form action="javascript:void(0);" method="post" class="inline-form" id="pb">
-            <div class="container ">
-              <div class="row justify-content-around text-white bg-primary m-3 p-2">
-                <div class="m-2 text-uppercase text-decoration-underline" id="sections">onderdeel</div>
-                <div class="m-2 text-uppercase text-decoration-underline" id="level">level</div>
-              </div>
-            </div>
-
-            <div class="justify-content-center">
-              <button type="submit" class="btn btn-primary m-3" id="updatebtn">Update</button>
-            </div>
-          </form>
-        </div>
-
-
-      <div id="question">
-      </div>
-      <hr />
-      <div class="dropdown">
-        <button class="btn btn-primary " type="button" data-bs-toggle="collapse" data-bs-target="#solution">Oplossing </button>
-        <div class="collapse" id="solution">
-        </div>
-      </div>
-    </div>
 
     <div class="item item-d">
       <!-- RIGHT toolbar  -->
@@ -473,4 +534,5 @@
 
   </div>
 </body>
+
 </html>
